@@ -54,15 +54,15 @@ Build mode: fast
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — brief recap (delegated/autonomous build; no live learner session)
+- [x] Optional edit and transfer reflection addressed — not applicable (autonomous run; transfer question left for the learner)
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [pending]
-Route and stops: [pending]
-Edit outcome: [pending]
-Reflection: [pending]
-Activity mode: [pending]
+Activity and evidence: App map generated from the finished code at `devpost/app-map.html`. The project-grounded practice captured is the LLM in/out trust boundary — untrusted page text labeled as data in the prompt (`lib/gemini.mjs`) and schema-validated model output with a one-retry fallback (`lib/schema.mjs`), with unknown facts kept null rather than invented.
+Route and stops: `public/app.js` (submit → fetch) → `server.mjs` (`/api/analyze`) → `lib/extract.mjs` → `lib/gemini.mjs` → `lib/schema.mjs` → back to `app.js` (render). Reference route only (no live walkthrough).
+Edit outcome: not applicable — no interactive edit in an autonomous run.
+Reflection: not applicable — the optional transfer question is left open for the learner.
+Activity mode: reference-only recap + app map (autonomous build; personal reflection intentionally not fabricated).
 
 ## Revisions
 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hackwise — App Map</title>
+<style>
+  :root { --ink:#141414; --canvas:#FBFAF7; --band:#F4F3EE; --lime:#B8F23A; --olive:#5a7a2e; --body:#5c5c57; --muted:#8a8a84; --line:rgba(20,20,20,.12); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--canvas); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:880px; margin:0 auto; padding:48px 20px 80px; }
+  h1 { font-size:34px; letter-spacing:-.02em; margin:0 0 6px; }
+  .sub { color:var(--body); margin:0 0 32px; }
+  h2 { font-size:21px; letter-spacing:-.01em; margin:40px 0 12px; }
+  code { background:var(--band); padding:1px 6px; border-radius:5px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9em; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:12px 0; }
+  .map { display:grid; gap:10px; }
+  .file { display:flex; gap:12px; align-items:baseline; padding:10px 0; border-bottom:1px solid var(--line); }
+  .file:last-child { border-bottom:none; }
+  .file .name { font-family:ui-monospace,monospace; font-size:14px; font-weight:600; min-width:200px; color:var(--olive); }
+  .file .desc { color:var(--body); font-size:14.5px; }
+  .pill { display:inline-block; font-family:ui-monospace,monospace; font-size:11px; letter-spacing:.06em; background:var(--ink); color:var(--canvas); border-radius:6px; padding:3px 9px; margin-bottom:10px; }
+  .flow { width:100%; height:auto; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .takeaway { background:var(--band); border-left:3px solid var(--lime); border-radius:0 10px 10px 0; padding:16px 20px; }
+  ul { margin:8px 0; padding-left:22px; } li { margin:4px 0; }
+  .foot { margin-top:40px; color:var(--muted); font-size:13px; border-top:1px solid var(--line); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pill">HACKWISE · APP MAP</div>
+  <h1>What you built, and where it lives</h1>
+  <p class="sub">A take-home map of the Hackwise proof of concept — the core flow, the files, and one pattern worth reusing.</p>
+
+  <h2>The core flow</h2>
+  <svg class="flow" viewBox="0 0 860 220" role="img" aria-label="Flow from URL to rendered brief">
+    <defs>
+      <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#141414"/></marker>
+    </defs>
+    <!-- boxes -->
+    <g font-family="system-ui" font-size="12.5" text-anchor="middle">
+      <rect x="10"  y="80" width="120" height="56" rx="10" fill="#fff" stroke="#141414" stroke-width="1.3"/>
+      <text x="70" y="104">Paste URL</text><text x="70" y="121" fill="#5c5c57">app.js</text>
+
+      <rect x="160" y="80" width="120" height="56" rx="10" fill="#fff" stroke="#141414" stroke-width="1.3"/>
+      <text x="220" y="104">Validate</text><text x="220" y="121" fill="#5c5c57">client + server</text>
+
+      <rect x="310" y="80" width="120" height="56" rx="10" fill="#141414"/>
+      <text x="370" y="104" fill="#FBFAF7">POST /api/analyze</text><text x="370" y="121" fill="#B8F23A">server.mjs</text>
+
+      <rect x="460" y="40" width="120" height="56" rx="10" fill="#fff" stroke="#141414" stroke-width="1.3"/>
+      <text x="520" y="64">Fetch + extract</text><text x="520" y="81" fill="#5c5c57">extract.mjs</text>
+
+      <rect x="460" y="124" width="120" height="56" rx="10" fill="#fff" stroke="#141414" stroke-width="1.3"/>
+      <text x="520" y="148">Gemini call</text><text x="520" y="165" fill="#5c5c57">gemini.mjs</text>
+
+      <rect x="610" y="82" width="110" height="56" rx="10" fill="#fff" stroke="#141414" stroke-width="1.3"/>
+      <text x="665" y="106">Validate JSON</text><text x="665" y="123" fill="#5c5c57">schema.mjs</text>
+
+      <rect x="748" y="82" width="104" height="56" rx="10" fill="#B8F23A"/>
+      <text x="800" y="106" fill="#141414">Render brief</text><text x="800" y="123" fill="#141414">app.js</text>
+    </g>
+    <!-- arrows -->
+    <g stroke="#141414" stroke-width="1.3" fill="none" marker-end="url(#arw)">
+      <path d="M130 108 L158 108"/>
+      <path d="M280 108 L308 108"/>
+      <path d="M430 100 L458 72"/>
+      <path d="M430 116 L458 150"/>
+      <path d="M580 70 L600 100 L608 104"/>
+      <path d="M580 150 L600 118 L608 114"/>
+      <path d="M720 110 L746 110"/>
+    </g>
+  </svg>
+  <p style="color:#5c5c57;font-size:14px;">No key configured? <code>server.mjs</code> short-circuits to a labeled <strong>demo brief</strong> instead of the Gemini call — the flow still runs end to end.</p>
+
+  <h2>The files</h2>
+  <div class="card map">
+    <div class="file"><span class="name">server.mjs</span><span class="desc">Zero-dependency Node HTTP server. Serves <code>public/</code> and handles <code>POST /api/analyze</code>. Loads <code>.env.local</code>, keeps the API key server-side, maps errors to codes.</span></div>
+    <div class="file"><span class="name">public/index.html</span><span class="desc">The whole landing page — every section, inline CSS design tokens, the dark result panel. Ported 1:1 from <code>design/</code>.</span></div>
+    <div class="file"><span class="name">public/app.js</span><span class="desc">The UI brain: composer (Enter / Shift+Enter), URL validation, the reading animation, tab switching, rendering the brief, and copy-to-clipboard.</span></div>
+    <div class="file"><span class="name">lib/extract.mjs</span><span class="desc">Fetches the URL (timeout + size cap) and reduces the HTML to plain text. Treats the page as untrusted data.</span></div>
+    <div class="file"><span class="name">lib/gemini.mjs</span><span class="desc">Builds the prompt, calls Gemini (REST, or the official SDK if installed), retries once on bad JSON. Model comes from env.</span></div>
+    <div class="file"><span class="name">lib/schema.mjs</span><span class="desc">Validates the model's JSON into a safe <code>Brief</code> shape before anything is shown; also the shared URL check.</span></div>
+    <div class="file"><span class="name">lib/demoBrief.mjs</span><span class="desc">The labeled sample brief returned in demo mode.</span></div>
+  </div>
+
+  <h2>One pattern worth reusing</h2>
+  <div class="takeaway">
+    <strong>Treat anything an LLM reads from the outside world as untrusted input, and validate anything it returns before you trust it.</strong>
+    <ul>
+      <li><strong>In →</strong> the fetched page text is wrapped and explicitly labeled "data, not instructions" in the prompt (<code>lib/gemini.mjs</code>), so a malicious page can't hijack the model.</li>
+      <li><strong>Out →</strong> the model's reply is parsed and shape-checked (<code>lib/schema.mjs</code>) with a one-retry fallback, so malformed output becomes a clean error instead of a broken UI.</li>
+      <li><strong>Honesty →</strong> missing facts are <code>null</code>/"unknown" and inferred advice is labeled — the model is never allowed to invent competition rules.</li>
+    </ul>
+    Next time you wire an agent or LLM to a tool or the web, keep this in/out boundary: constrain the input, schema-check the output.
+  </div>
+
+  <div class="foot">
+    Generated from the finished code for the Devpost Build With AI: Basics hackathon.
+    Planning lives in <code>devpost/</code> (scope → prd → spec → checklist). Run with <code>node server.mjs</code> and open <code>localhost:3000</code>.
+  </div>
+</div>
+</body>
+</html>
