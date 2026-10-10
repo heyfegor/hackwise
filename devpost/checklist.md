@@ -33,7 +33,7 @@ Build mode: fast
   Learner check: Paste any URL, watch it analyze, read the brief, click Copy, and confirm the "Demo mode" badge is visible; then paste "not a url" and confirm the inline error.
   Commit: `Wire composer to analysis endpoint with demo mode, validation, states, and copy`
 
-- [ ] **3. Real Gemini analysis of a live hackathon URL**
+- [x] **3. Real Gemini analysis of a live hackathon URL** — plumbing verified; valid-key success pending a key (see note below)
   Becomes usable: With `GEMINI_API_KEY` set, submitting a real hackathon URL fetches and extracts the page, sends the text to Gemini Flash, validates the structured JSON, and renders a real brief (facts from the page, inferred MVP labeled separately, unknowns shown as unknown). Fetch/model/timeout/invalid-JSON failures degrade to clear errors; no key still falls back to demo mode.
   Why now: Completes the kernel for real. It is last only because slice 2 proved the whole surrounding pipeline, so this slice is a focused swap of demo data for a verified model call.
   PRD ref: `prd.md > Analysis + the brief`, `prd.md > States and Boundaries`, `prd.md > Non-Goals`
@@ -42,6 +42,7 @@ Build mode: fast
   Verify (mechanical): `npm run build` passes; with a key in `.env.local`, `POST /api/analyze` for a real hackathon URL returns `{ ok:true, mode:"live", brief }` that Zod accepts and whose `meta.sourceUrl` matches; a deliberately bad URL returns `FETCH_FAILED`; confirm the key never appears in any client bundle (`grep` the `.next` client output). If no key is available, record that live verification is pending and confirm the demo path + error mapping instead.
   Learner check: With your key set, paste a real Devpost/MLH hackathon URL and confirm the brief reflects that page (deadline/requirements look right, unknowns say unknown, MVP is labeled as a recommendation).
   Commit: `Add real Gemini-powered page analysis with extraction, schema validation, and failure handling`
+  VERIFICATION NOTE: Code complete and committed. Verified via a local probe: `fetchPageText` fetched + extracted a real HTTP page (title/description/2572 chars clean text), and `analyzeWithGemini` with a dummy key executed a real Gemini REST call that returned HTTP 400 "API key not valid", correctly mapped to `MODEL_ERROR`. The Gemini endpoint is reachable from this machine. The ONLY step not exercised is a successful valid-key response, because the environment had no `GEMINI_API_KEY` (user's `.env.local` was empty). With a valid key the full `mode:"live"` path is expected to work. Demo path + all error mappings (INVALID_URL, FETCH_FAILED, MODEL_ERROR, malformed body) are verified.
 
 ## Hands-on Checkpoints
 
@@ -70,3 +71,4 @@ Activity mode: reference-only recap + app map (autonomous build; personal reflec
 - **Gemini SDK → REST with automatic SDK upgrade** — because `@google/genai` could not be installed, `lib/gemini.mjs` calls the Gemini REST API via built-in `fetch` by default, and dynamically imports the official `@google/genai` SDK automatically *if it is ever installed* (`npm install @google/genai`). Same model, same prompt, same validation — honors the "official SDK" requirement the moment the environment allows it, and ships regardless.
 - **Zod → equivalent hand-rolled validator** (`lib/schema.mjs > validateBrief`) and **cheerio → regex extraction** (`lib/extract.mjs`) — both forced by the same no-install constraint; functionally equivalent for the POC (shape validation before display; script/style-stripped text extraction).
 - **Per-file React components consolidated** — the planned `components/*.tsx` became one static `public/index.html` + `public/app.js`, mirroring the original design file's own structure (markup + inline styles + one script).
+- **Gemini network/timeout errors now map to `MODEL_ERROR`** — the build discovered that an aborted/failed `fetch` to the model endpoint would fall through to a generic 500; `lib/gemini.mjs > callViaRest` now catches it and returns a recoverable `MODEL_ERROR` ("took too long" / "could not reach the model service").
