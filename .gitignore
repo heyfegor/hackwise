@@ -1,0 +1,25 @@
+# === Devpost Learn: personal learning context (kept out of commits by default) ===
+# Keeps personal context out of the repo. Does NOT make AI conversations private,
+# and does not remove anything already committed.
+devpost/learner-profile.md
+
+# === Secrets / credentials (never commit) ===
+.env
+.env.*
+!.env.example
+
+# === Node ===
+node_modules/
+npm-debug.log*
+*.log
+
+# === Devpost Learn Skill Pack install scaffolding (tooling, not the project) ===
+.agents/
+agent/
+skills-lock.json
+.claude/
+
+# === OS / editor ===
+.DS_Store
+.vscode/
+.idea/

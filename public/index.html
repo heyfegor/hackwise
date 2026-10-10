@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hackwise — Know exactly what to build</title>
+<meta name="description" content="Paste a hackathon URL. Hackwise reads the requirements, judging criteria, and rules, then hands back a focused plan for what to build." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 28'%3E%3Cpath d='M2 5 L9 23 L16 10 L21 20' stroke='%23141414' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M21 20 L30 4' stroke='%23B8F23A' stroke-width='3.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --canvas:#FBFAF7; --band:#F4F3EE; --ink:#141414; --ink-hover:#2a2a2a;
+    --body:#5c5c57; --tertiary:#6d6d68; --muted:#8a8a84; --muted2:#9a9a94;
+    --faint:#a0a09a; --disabled:#b4b4ae; --lime:#B8F23A; --olive:#5a7a2e;
+    --font:'Geist', system-ui, sans-serif; --mono:'Geist Mono', monospace;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; }
+  body { background:var(--canvas); color:var(--ink); font-family:var(--font); line-height:1.5; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+  a { color:var(--ink); text-decoration:none; }
+  a.muted { color:var(--body); }
+  a.muted:hover { color:var(--ink); }
+  textarea { font-family:inherit; }
+  ::selection { background:var(--lime); color:var(--ink); }
+  h1,h2,p { margin:0; }
+  button { font-family:inherit; }
+  @keyframes hw-spin { to { transform:rotate(360deg); } }
+
+  .wrap { max-width:1240px; margin:0 auto; padding:0 clamp(20px,4vw,40px); }
+  .section { max-width:1240px; margin:0 auto; padding:clamp(64px,9vw,120px) clamp(20px,4vw,40px); }
+
+  /* nav */
+  nav.hw { position:sticky; top:0; z-index:50; background:rgba(251,250,247,.88); backdrop-filter:saturate(1.1) blur(8px); -webkit-backdrop-filter:saturate(1.1) blur(8px); border-bottom:1px solid rgba(20,20,20,.08); }
+  .nav-row { max-width:1240px; margin:0 auto; padding:18px clamp(20px,4vw,40px); display:flex; align-items:center; gap:24px; }
+  .brand { display:flex; align-items:center; gap:9px; }
+  .brand span { font-weight:600; font-size:18px; letter-spacing:-.02em; }
+  .navlinks { display:flex; align-items:center; gap:30px; margin-left:16px; }
+  .navlinks a { font-size:15px; color:var(--body); font-weight:450; }
+  .nav-right { margin-left:auto; display:flex; align-items:center; gap:14px; }
+  .btn-dark { cursor:pointer; background:var(--ink); color:var(--canvas); border:none; border-radius:10px; padding:10px 20px; font-size:14.5px; font-weight:500; letter-spacing:-.01em; transition:background .15s ease, transform .15s ease; }
+  .btn-dark:hover { background:var(--ink-hover); }
+  .hamburger { display:none; cursor:pointer; background:none; border:1px solid rgba(20,20,20,.14); border-radius:10px; width:42px; height:42px; align-items:center; justify-content:center; padding:0; }
+  .mobile-menu { position:absolute; left:0; right:0; top:100%; background:rgba(251,250,247,.98); backdrop-filter:saturate(1.1) blur(8px); -webkit-backdrop-filter:saturate(1.1) blur(8px); border-top:1px solid rgba(20,20,20,.08); border-bottom:1px solid rgba(20,20,20,.08); box-shadow:0 20px 40px -24px rgba(20,20,20,.35); padding:12px clamp(20px,4vw,40px) 20px; display:none; flex-direction:column; gap:2px; }
+  .mobile-menu.open { display:flex; }
+  .mobile-menu a { font-size:17px; color:var(--ink); padding:12px 0; border-bottom:1px solid rgba(20,20,20,.07); }
+  .mobile-menu button { cursor:pointer; background:var(--ink); color:var(--canvas); border:none; border-radius:10px; padding:14px; font-size:15px; font-weight:500; margin-top:12px; }
+
+  /* hero */
+  header.hero { max-width:820px; margin:0 auto; padding:clamp(56px,9vw,120px) clamp(20px,4vw,40px) clamp(48px,7vw,88px); display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .pill { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; background:#fff; border:1px solid rgba(20,20,20,.12); border-radius:999px; padding:6px 14px 6px 12px; font-size:13.5px; color:#3a3a37; margin-bottom:clamp(22px,3vw,30px); }
+  .dot { width:7px; height:7px; background:var(--lime); border-radius:50%; display:inline-block; }
+  h1.hero-h1 { font-size:clamp(42px,6.5vw,80px); line-height:1; letter-spacing:-.04em; font-weight:600; margin:0 0 22px; text-wrap:balance; }
+  h1.hero-h1 .accent { color:var(--olive); }
+  p.subhead { font-size:clamp(16px,1.3vw,19px); color:var(--body); max-width:30em; margin:0 0 36px; line-height:1.55; text-wrap:pretty; }
+
+  /* composer */
+  .composer { width:100%; max-width:620px; background:#fff; border:1.5px solid rgba(20,20,20,.14); border-radius:22px; padding:14px 14px 12px; box-shadow:0 14px 40px -28px rgba(20,20,20,.5); transition:border-color .18s ease, box-shadow .18s ease; text-align:left; }
+  .composer.focused { border-color:var(--lime); box-shadow:0 0 0 4px rgba(184,242,58,.2), 0 14px 40px -28px rgba(20,20,20,.5); }
+  .composer textarea { width:100%; border:none; outline:none; resize:none; background:transparent; font-size:15.5px; line-height:1.5; color:var(--ink); padding:4px 6px; max-height:140px; }
+  .composer-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:6px; }
+  .send { flex:none; cursor:pointer; background:var(--lime); color:var(--ink); border:none; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; transition:transform .15s ease, box-shadow .15s ease; }
+  .send:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 20px rgba(184,242,58,.55); }
+  .send:disabled { opacity:.55; cursor:not-allowed; }
+  .inline-err { min-height:22px; margin-top:10px; font-size:14px; color:#b4463a; }
+
+  .platforms { margin-top:clamp(30px,6vw,54px); display:flex; flex-direction:column; align-items:center; }
+  .platforms .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--faint); margin-bottom:16px; }
+  .platforms .marks { display:flex; align-items:center; justify-content:center; gap:clamp(22px,3vw,38px); flex-wrap:wrap; font-weight:600; font-size:16px; color:var(--disabled); letter-spacing:-.01em; }
+
+  /* feature strip */
+  .strip { border-top:1px solid rgba(20,20,20,.1); border-bottom:1px solid rgba(20,20,20,.1); display:grid; grid-template-columns:1fr 1fr 1fr; position:relative; }
+  .strip-cell { padding:clamp(30px,4vw,44px) clamp(18px,2.5vw,30px); text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .chip-round { width:44px; height:44px; border-radius:50%; background:#fff; border:1px solid rgba(20,20,20,.1); display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
+  .strip-cell .t { font-size:16px; font-weight:600; letter-spacing:-.01em; }
+  .strip-cell .b { font-size:14px; color:var(--muted); max-width:24em; }
+  .strip-div { position:absolute; top:22%; bottom:22%; width:1px; background:rgba(20,20,20,.1); }
+
+  /* eyebrow row */
+  .eyebrow-row { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:13px; letter-spacing:.04em; color:var(--body); margin-bottom:20px; }
+  h2.big { font-size:clamp(32px,4.5vw,56px); line-height:1.04; letter-spacing:-.03em; font-weight:600; margin:0 0 16px; }
+  p.intro { font-size:clamp(16px,1.2vw,18px); color:var(--body); margin:0 0 clamp(48px,6vw,72px); max-width:34em; }
+
+  /* features grid */
+  .fgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:clamp(36px,4vw,56px) clamp(32px,4vw,48px); }
+  .chip-sq { width:34px; height:34px; border-radius:9px; background:#fff; border:1px solid rgba(20,20,20,.1); display:flex; align-items:center; justify-content:center; margin-bottom:22px; }
+  .fcard .row { display:flex; gap:12px; }
+  .accent-bar { flex:none; width:3px; background:var(--lime); border-radius:2px; }
+  .fcard .t { font-size:18.5px; font-weight:600; letter-spacing:-.01em; margin-bottom:8px; }
+  .fcard .b { color:var(--tertiary); font-size:15px; margin:0; line-height:1.55; }
+
+  /* how it works */
+  .how-band { background:var(--band); border-top:1px solid rgba(20,20,20,.08); border-bottom:1px solid rgba(20,20,20,.08); }
+  .how-head { text-align:center; max-width:36em; margin:0 auto clamp(40px,5vw,56px); }
+  .how-head h2 { font-size:clamp(30px,4vw,50px); line-height:1.05; letter-spacing:-.03em; font-weight:600; margin:0; }
+  .how-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:clamp(28px,3vw,40px); }
+  .how-step { border-top:1px solid rgba(20,20,20,.14); padding-top:22px; }
+  .chip-dark { width:40px; height:40px; border-radius:10px; background:var(--ink); display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+  .how-step .t { font-size:20px; font-weight:600; letter-spacing:-.02em; margin-bottom:9px; }
+  .how-step .b { color:var(--tertiary); font-size:15px; margin:0; line-height:1.55; }
+
+  /* why */
+  .why-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:clamp(36px,5vw,72px); align-items:center; }
+  .why-label { display:inline-block; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; background:var(--ink); color:var(--canvas); border-radius:6px; padding:5px 11px; margin-bottom:24px; }
+  .why-stmt { font-size:clamp(22px,2.4vw,32px); line-height:1.3; letter-spacing:-.02em; font-weight:500; margin:0; max-width:16em; }
+  .why-stmt .muted { color:var(--muted2); }
+
+  /* preview (dark) */
+  .preview { background:var(--ink); color:var(--canvas); }
+  .preview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:clamp(32px,4vw,56px); align-items:start; }
+  .preview h2 { font-size:clamp(30px,4vw,48px); line-height:1.04; letter-spacing:-.03em; font-weight:600; margin:0 0 16px; }
+  .preview .lede { color:var(--muted2); font-size:clamp(15px,1.2vw,18px); margin:0 0 30px; max-width:26em; }
+  .pill-lime { cursor:pointer; background:var(--lime); color:var(--ink); border:none; border-radius:999px; padding:13px 24px; font-size:15px; font-weight:600; letter-spacing:-.01em; display:inline-flex; align-items:center; gap:8px; transition:transform .15s ease, box-shadow .15s ease; }
+  .pill-lime:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(184,242,58,.4); }
+  .metrics { margin-top:34px; display:flex; gap:28px; flex-wrap:wrap; }
+  .mono-label { font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--muted); margin-bottom:5px; }
+  .metric-val { font-size:19px; font-weight:600; }
+  .metric-val.lime { color:var(--lime); }
+  .mvp-box { margin-top:26px; padding-top:20px; border-top:1px solid rgba(255,255,255,.1); }
+  .mvp-box p { margin:4px 0 0; font-size:15px; line-height:1.5; color:#e9e9e4; }
+  .mvp-box p.note { margin-top:12px; font-size:13px; color:var(--muted2); }
+  .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .badge-demo { font-family:var(--mono); font-size:11px; letter-spacing:.08em; background:rgba(184,242,58,.14); color:var(--lime); border:1px solid var(--lime); border-radius:999px; padding:5px 12px; }
+  .copy-btn { font-family:var(--mono); cursor:pointer; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07); color:var(--canvas); border-radius:999px; padding:6px 14px; font-size:12px; letter-spacing:.04em; }
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:26px; }
+  .tab { font-family:var(--mono); cursor:pointer; border:none; border-radius:999px; padding:9px 18px; font-size:13px; letter-spacing:.02em; transition:all .18s ease; background:rgba(255,255,255,.07); color:var(--muted2); }
+  .tab.active { background:var(--lime); color:var(--ink); }
+  .brief-row { display:flex; gap:clamp(14px,2vw,28px); align-items:baseline; padding:clamp(16px,2vw,22px) 0; border-top:1px solid rgba(255,255,255,.1); }
+  .brief-row .tag { flex:none; min-width:52px; font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+  .brief-row .txt { font-size:clamp(16px,1.4vw,20px); font-weight:450; line-height:1.4; letter-spacing:-.01em; }
+  .row-cap { border-top:1px solid rgba(255,255,255,.1); }
+  .err-card { border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:28px 24px; background:rgba(255,255,255,.03); }
+  .err-card .code { font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:#ff8f8f; margin-bottom:10px; }
+  .err-card p { margin:0 0 20px; font-size:16px; line-height:1.5; }
+  .stage { display:flex; align-items:center; gap:14px; padding:14px 0; border-top:1px solid rgba(255,255,255,.1); }
+  .stage .mark { flex:none; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--ink); }
+  .stage .lbl { font-size:16px; }
+
+  /* build this */
+  h2.cut { font-size:clamp(30px,4vw,52px); line-height:1.04; letter-spacing:-.03em; font-weight:600; margin:0 0 clamp(44px,6vw,64px); max-width:13em; }
+  .cut-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:clamp(36px,5vw,72px); }
+  .cut-head { display:flex; align-items:center; gap:10px; margin-bottom:24px; }
+  .cut-head .lbl { font-family:var(--mono); font-size:13px; letter-spacing:.08em; }
+  .cut-item { display:flex; align-items:center; gap:14px; padding:15px 0; border-bottom:1px solid rgba(20,20,20,.1); }
+  .cut-item .mark { flex:none; font-size:15px; }
+  .cut-item .txt { font-size:clamp(16px,1.4vw,20px); font-weight:450; letter-spacing:-.01em; }
+
+  /* final cta */
+  .cta-band { background:var(--band); border-top:1px solid rgba(20,20,20,.08); }
+  .cta-inner { max-width:1240px; margin:0 auto; padding:clamp(72px,10vw,150px) clamp(20px,4vw,40px); }
+  .cta-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:clamp(28px,4vw,56px); align-items:end; }
+  .cta-grid h2 { font-size:clamp(38px,5.5vw,76px); line-height:1; letter-spacing:-.04em; font-weight:600; margin:0; }
+  .cta-grid h2 .accent { color:var(--olive); }
+  .cta-grid p { font-size:clamp(16px,1.3vw,19px); color:var(--body); margin:0 0 26px; max-width:26em; }
+  .btn-dark-pill { cursor:pointer; background:var(--ink); color:var(--canvas); border:none; border-radius:999px; padding:15px 30px; font-size:16px; font-weight:500; letter-spacing:-.01em; display:inline-flex; align-items:center; gap:9px; transition:background .15s ease, transform .15s ease; }
+  .btn-dark-pill:hover { background:var(--ink-hover); transform:translateY(-2px); }
+
+  /* footer */
+  footer.hw { background:var(--canvas); }
+  .foot-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:36px 24px; margin-bottom:clamp(40px,5vw,60px); }
+  .foot-brand { grid-column:1 / -1; max-width:320px; margin-bottom:8px; }
+  .foot-brand .tagline { font-size:14.5px; color:var(--tertiary); max-width:24em; }
+  .foot-col .head { font-family:var(--mono); font-size:11px; letter-spacing:.12em; color:var(--faint); margin-bottom:16px; }
+  .foot-col .links { display:flex; flex-direction:column; gap:11px; }
+  .foot-col .links a { font-size:14.5px; color:var(--body); }
+  .foot-bottom { border-top:1px solid rgba(20,20,20,.1); padding-top:22px; font-family:var(--mono); font-size:11.5px; color:var(--faint); }
+
+  @media (max-width:880px) {
+    .navlinks { display:none !important; }
+    .nav-cta { display:none !important; }
+    .hamburger { display:flex !important; }
+    .strip { grid-template-columns:1fr !important; }
+    .strip-div { display:none !important; }
+    .cta-grid { grid-template-columns:1fr !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div style="overflow-x:hidden;">
+
+  <!-- ===== NAV ===== -->
+  <nav class="hw">
+    <div class="nav-row">
+      <a href="#top" class="brand">
+        <svg width="26" height="22" viewBox="0 0 32 28" fill="none" aria-hidden="true"><path d="M2 5 L9 23 L16 10 L21 20" stroke="#141414" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 20 L30 4" stroke="#B8F23A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>hackwise</span>
+      </a>
+      <div class="navlinks">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#preview">Preview</a>
+      </div>
+      <div class="nav-right">
+        <button class="btn-dark nav-cta" data-analyze>Analyze</button>
+        <button class="hamburger" id="hw-hamburger" aria-label="Menu" aria-expanded="false">
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="#141414" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="hw-mobile-menu">
+      <a href="#features" data-close>Features</a>
+      <a href="#how" data-close>How it works</a>
+      <a href="#preview" data-close>Preview</a>
+      <button data-analyze>Analyze a hackathon</button>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <header class="hero" id="top">
+    <div class="pill"><span class="dot"></span>hackwise is now available</div>
+    <h1 class="hero-h1">Know exactly what to <span class="accent">build.</span></h1>
+    <p class="subhead">Paste a hackathon URL. Hackwise reads the requirements, judging criteria, and rules, then hands back a focused plan for what to build.</p>
+
+    <div class="composer" id="hw-composer">
+      <textarea id="hw-url" rows="2" aria-label="Hackathon URL" placeholder="Paste a Hackathon URL"></textarea>
+      <div class="composer-actions">
+        <button class="send" id="hw-send" aria-label="Analyze">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M12 5l-6 6M12 5l6 6" stroke="#141414" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="inline-err" id="hw-inline-err" role="alert"></div>
+
+    <div class="platforms">
+      <div class="eyebrow">WORKS WITH THE PLATFORMS YOU ALREADY USE</div>
+      <div class="marks"><span>Devpost</span><span>MLH</span><span>Devfolio</span><span>HackerEarth</span></div>
+    </div>
+  </header>
+
+  <!-- ===== FEATURE STRIP ===== -->
+  <div class="wrap">
+    <div class="strip">
+      <div class="strip-cell">
+        <div class="chip-round"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#141414" stroke-width="1.7"/><path d="M12 8v4l3 2" stroke="#141414" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="t">Instant build brief</div><div class="b">A full hackathon read in seconds, not an afternoon.</div>
+      </div>
+      <div class="strip-cell">
+        <div class="chip-round"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <div class="t">AI analysis</div><div class="b">Requirements, judging, and rules pulled out automatically.</div>
+      </div>
+      <div class="strip-cell">
+        <div class="chip-round"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 7l8-4 8 4-8 4-8-4z" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/><path d="M4 7v10l8 4 8-4V7" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <div class="t">Focused MVP scope</div><div class="b">The smallest thing that proves the idea to judges.</div>
+      </div>
+      <div class="strip-div" style="left:33.33%;"></div>
+      <div class="strip-div" style="left:66.66%;"></div>
+    </div>
+  </div>
+
+  <!-- ===== FEATURES GRID ===== -->
+  <section class="section" id="features">
+    <div class="eyebrow-row"><span class="dot"></span>Features</div>
+    <h2 class="big">Everything you need to decide what matters.</h2>
+    <p class="intro">A focused toolkit that helps hackathon builders cut the noise and ship the right thing in record time.</p>
+    <div class="fgrid">
+      <div class="fcard"><div class="chip-sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#141414" stroke-width="1.7"/><path d="M20 20l-3.5-3.5" stroke="#141414" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="row"><span class="accent-bar"></span><div><div class="t">Hackathon intelligence</div><p class="b">Understand the requirements, rules, judging criteria, sponsors, and technologies that actually count.</p></div></div></div>
+      <div class="fcard"><div class="chip-sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/></svg></div><div class="row"><span class="accent-bar"></span><div><div class="t">AI-powered analysis</div><p class="b">Describe the hackathon or paste the link and Hackwise reads the fine print for you.</p></div></div></div>
+      <div class="fcard"><div class="chip-sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="#141414" stroke-width="1.7"/><path d="M9 9h6M9 13h6M9 17h3" stroke="#141414" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="row"><span class="accent-bar"></span><div><div class="t">Build brief</div><p class="b">The whole page turned into one concise, actionable summary you can scan in seconds.</p></div></div></div>
+      <div class="fcard"><div class="chip-sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 7h12M4 12h12M4 17h8" stroke="#141414" stroke-width="1.7" stroke-linecap="round"/><path d="M19 6l2 2-4 4" stroke="#B8F23A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="row"><span class="accent-bar"></span><div><div class="t">Submission plan</div><p class="b">Requirements turned into a clear checklist for shipping before the deadline.</p></div></div></div>
+      <div class="fcard"><div class="chip-sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/></svg></div><div class="row"><span class="accent-bar"></span><div><div class="t">Scope guardrails</div><p class="b">Clear guidance on what to skip so you never over-build under a deadline.</p></div></div></div>
+      <div class="fcard"><div class="chip-sq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 18V8M10 18V4M16 18v-7M22 18v-3" stroke="#141414" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="row"><span class="accent-bar"></span><div><div class="t">Build order</div><p class="b">A sequenced plan — what to do first, second, and last — right up to the demo.</p></div></div></div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-band" id="how">
+    <div class="section">
+      <div class="how-head"><h2>From a URL to a plan in three steps.</h2></div>
+      <div class="how-grid">
+        <div class="how-step"><div class="chip-dark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M10 7l1-1a4 4 0 015 5l-1 1M14 17l-1 1a4 4 0 01-5-5l1-1" stroke="#FBFAF7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="t">Paste the URL</div><p class="b">One link is all Hackwise needs to get started — no setup, no account.</p></div>
+        <div class="how-step"><div class="chip-dark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 4l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z" stroke="#FBFAF7" stroke-width="1.7" stroke-linejoin="round"/></svg></div><div class="t">Hackwise reads it</div><p class="b">It extracts the requirements, judging criteria, technologies, and submission rules that affect your score.</p></div>
+        <div class="how-step"><div class="chip-dark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#FBFAF7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="t">Get your scope</div><p class="b">A clear build order and the next steps you need to ship before the deadline.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== WHY HACKWISE ===== -->
+  <section class="section">
+    <div class="why-grid">
+      <div>
+        <div class="why-label">Why Hackwise</div>
+        <p class="why-stmt">Hackwise filters the whole hackathon page down to what scores — <span class="muted">turning rules, sponsors, and fine print into a plan you can build.</span></p>
+      </div>
+      <div style="padding:clamp(10px,2vw,24px);">
+        <svg viewBox="0 0 360 220" width="100%" height="100%" style="max-width:460px;display:block;margin:0 auto;" fill="none" aria-hidden="true">
+          <path d="M60 150 C60 60 180 60 180 60 C180 60 300 60 300 150" stroke="rgba(20,20,20,.22)" stroke-width="1.3" stroke-dasharray="4 5"/>
+          <path d="M90 150 L150 110 M270 150 L210 110" stroke="rgba(20,20,20,.22)" stroke-width="1.3" stroke-dasharray="4 5"/>
+          <rect x="165" y="135" width="30" height="30" rx="7" fill="#fff" stroke="rgba(20,20,20,.18)" stroke-width="1"/><circle cx="180" cy="150" r="5" fill="#141414"/>
+          <rect x="165" y="45" width="30" height="30" rx="7" fill="#141414"/><rect x="174" y="54" width="12" height="12" rx="2" fill="#FBFAF7"/>
+          <rect x="45" y="135" width="30" height="30" rx="7" fill="#B8F23A"/><path d="M54 150h12M60 144v12" stroke="#141414" stroke-width="1.6" stroke-linecap="round"/>
+          <rect x="285" y="135" width="30" height="30" rx="7" fill="#B8F23A"/><path d="M294 156l12-12M300 144h6v6" stroke="#141414" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="180" y="32" text-anchor="middle" fill="#9a9a94" font-size="9" font-family="Geist Mono, monospace" letter-spacing="1.5">ADAPTING</text>
+          <text x="60" y="188" text-anchor="middle" fill="#9a9a94" font-size="9" font-family="Geist Mono, monospace" letter-spacing="1.5">LEARNING</text>
+          <text x="300" y="188" text-anchor="middle" fill="#9a9a94" font-size="9" font-family="Geist Mono, monospace" letter-spacing="1.5">DEPLOYING</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PREVIEW (dark, live result) ===== -->
+  <section class="preview" id="preview">
+    <div class="section">
+      <div class="preview-grid">
+        <div>
+          <h2>See exactly<br>what matters.</h2>
+          <p class="lede" id="hw-lede">A sample analysis of how this works. Switch between what Hackwise pulled out of the page.</p>
+          <button class="pill-lime" data-analyze>Analyze yours →</button>
+          <div class="metrics" id="hw-metrics"></div>
+          <div id="hw-mvpbox"></div>
+        </div>
+        <div style="min-width:0;" id="hw-panel-right"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BUILD THIS / DON'T BUILD ===== -->
+  <section class="section">
+    <h2 class="cut">Build what wins. Skip the rest.</h2>
+    <div class="cut-grid">
+      <div>
+        <div class="cut-head"><span class="dot" style="width:8px;height:8px;"></span><span class="lbl" style="color:#141414;">BUILD THIS</span></div>
+        <div class="cut-item"><span class="mark" style="color:#5a7a2e;">✓</span><span class="txt">Core user workflow</span></div>
+        <div class="cut-item"><span class="mark" style="color:#5a7a2e;">✓</span><span class="txt">Required AI functionality</span></div>
+        <div class="cut-item"><span class="mark" style="color:#5a7a2e;">✓</span><span class="txt">A working prototype</span></div>
+        <div class="cut-item"><span class="mark" style="color:#5a7a2e;">✓</span><span class="txt">A demo-ready experience</span></div>
+      </div>
+      <div>
+        <div class="cut-head"><span style="width:8px;height:8px;border:1px solid rgba(20,20,20,.3);border-radius:50%;"></span><span class="lbl" style="color:#9a9a94;">DON'T BUILD THIS</span></div>
+        <div class="cut-item" style="border-color:rgba(20,20,20,.08);"><span class="mark" style="color:#c4c4be;">×</span><span class="txt" style="color:#9a9a94;">Complex user accounts</span></div>
+        <div class="cut-item" style="border-color:rgba(20,20,20,.08);"><span class="mark" style="color:#c4c4be;">×</span><span class="txt" style="color:#9a9a94;">Advanced analytics</span></div>
+        <div class="cut-item" style="border-color:rgba(20,20,20,.08);"><span class="mark" style="color:#c4c4be;">×</span><span class="txt" style="color:#9a9a94;">Large admin systems</span></div>
+        <div class="cut-item" style="border-color:rgba(20,20,20,.08);"><span class="mark" style="color:#c4c4be;">×</span><span class="txt" style="color:#9a9a94;">Anything unrelated to judging</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FINAL CTA ===== -->
+  <section class="cta-band">
+    <div class="cta-inner">
+      <div class="cta-grid">
+        <h2>Stop reading.<br>Start <span class="accent">building.</span></h2>
+        <div>
+          <p>Give Hackwise the hackathon and get back the shortest path to a submission.</p>
+          <button class="btn-dark-pill" data-analyze>Analyze a hackathon →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="hw">
+    <div class="section" style="padding-top:clamp(48px,6vw,80px);padding-bottom:clamp(28px,4vw,40px);">
+      <div class="foot-grid">
+        <div class="foot-brand">
+          <div class="brand" style="margin-bottom:12px;">
+            <svg width="26" height="22" viewBox="0 0 32 28" fill="none" aria-hidden="true"><path d="M2 5 L9 23 L16 10 L21 20" stroke="#141414" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 20 L30 4" stroke="#B8F23A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>hackwise</span>
+          </div>
+          <div class="tagline">Hackathon intelligence that tells you exactly what to build.</div>
+        </div>
+        <div class="foot-col"><div class="head">PRODUCT</div><div class="links"><a class="muted" href="#features">Features</a><a class="muted" href="#how">How it works</a><a class="muted" href="#preview">Preview</a></div></div>
+        <div class="foot-col"><div class="head">COMPANY</div><div class="links"><a class="muted" href="#top">About</a><a class="muted" href="#top">Blog</a></div></div>
+        <div class="foot-col"><div class="head">RESOURCES</div><div class="links"><a class="muted" href="#top">Docs</a><a class="muted" href="#top">GitHub</a></div></div>
+      </div>
+      <div class="foot-bottom">© 2026 hackwise. All rights reserved.</div>
+    </div>
+  </footer>
+
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
