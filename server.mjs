@@ -82,6 +82,17 @@ async function serveStatic(req, res) {
     res.writeHead(200, { "Content-Type": MIME[extname(filePath)] || "application/octet-stream" });
     res.end(req.method === "HEAD" ? undefined : data);
   } catch {
+    // SPA fallback: extensionless client routes (e.g. /analyze) serve the app shell.
+    if (!extname(safe)) {
+      try {
+        const data = await readFile(join(PUBLIC_DIR, "index.html"));
+        res.writeHead(200, { "Content-Type": MIME[".html"] });
+        res.end(req.method === "HEAD" ? undefined : data);
+        return;
+      } catch {
+        /* fall through to 404 */
+      }
+    }
     res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
     res.end("<h1>404 — Not found</h1>");
   }

@@ -166,7 +166,19 @@
   .foot-col .links a { font-size:14.5px; color:var(--body); }
   .foot-bottom { border-top:1px solid rgba(20,20,20,.1); padding-top:22px; font-family:var(--mono); font-size:11.5px; color:var(--faint); }
 
+  /* results screen (separate from the landing; same design system) */
+  .results { background:var(--ink); color:var(--canvas); min-height:100vh; }
+  .res-nav { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:16px; padding:16px clamp(20px,4vw,40px); background:rgba(20,20,20,.92); backdrop-filter:saturate(1.1) blur(8px); -webkit-backdrop-filter:saturate(1.1) blur(8px); border-bottom:1px solid rgba(255,255,255,.1); }
+  .res-back { cursor:pointer; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.07); color:var(--canvas); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500; transition:background .15s ease, transform .15s ease; }
+  .res-back:hover { background:rgba(255,255,255,.14); transform:translateX(-2px); }
+  .res-brand { display:flex; align-items:center; gap:9px; }
+  .res-brand span { font-weight:600; font-size:17px; letter-spacing:-.02em; color:var(--canvas); }
+  .res-url { margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--muted2); max-width:42%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .res-body { padding-top:clamp(36px,6vw,64px); padding-bottom:clamp(48px,8vw,96px); }
+  .res-body h2 { font-size:clamp(28px,3.5vw,44px); line-height:1.05; letter-spacing:-.03em; font-weight:600; margin:0 0 14px; }
+
   @media (max-width:880px) {
+    .res-url { display:none !important; }
     .navlinks { display:none !important; }
     .nav-cta { display:none !important; }
     .hamburger { display:flex !important; }
@@ -181,6 +193,8 @@
 </head>
 <body>
 <div style="overflow-x:hidden;">
+
+<div id="landing">
 
   <!-- ===== NAV ===== -->
   <nav class="hw">
@@ -369,6 +383,31 @@
       <div class="foot-bottom">© 2026 hackwise. All rights reserved.</div>
     </div>
   </footer>
+
+</div><!-- /#landing -->
+
+  <!-- ===== RESULTS SCREEN (separate from the landing) ===== -->
+  <div id="results-screen" class="results" hidden>
+    <header class="res-nav">
+      <button class="res-back" id="res-back" type="button"><span aria-hidden="true">←</span> Back</button>
+      <a href="/" class="res-brand" data-back aria-label="Back to Hackwise home">
+        <svg width="24" height="20" viewBox="0 0 32 28" fill="none" aria-hidden="true"><path d="M2 5 L9 23 L16 10 L21 20" stroke="#FBFAF7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 20 L30 4" stroke="#B8F23A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>hackwise</span>
+      </a>
+      <span class="res-url" id="res-url"></span>
+    </header>
+    <div class="section res-body">
+      <div class="preview-grid">
+        <div>
+          <h2 id="res-title">Analyzing…</h2>
+          <p class="lede" id="res-lede"></p>
+          <div class="metrics" id="res-metrics"></div>
+          <div id="res-mvpbox"></div>
+        </div>
+        <div style="min-width:0;" id="res-panel-right"></div>
+      </div>
+    </div>
+  </div>
 
 </div>
 <script src="/app.js"></script>

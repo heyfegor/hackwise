@@ -19,8 +19,10 @@ learning hackathon, following its Skill Pack plan-first workflow (see `devpost/`
 2. The browser validates the URL, then POSTs it to a **server-side** endpoint.
 3. The server fetches the page, extracts readable text, sends it to **Google Gemini**
    with a strict prompt, and **validates the returned JSON** against a schema.
-4. The result renders in the dark **Requirements / Judging / MVP / Submission** panel,
-   with deadline + prize metrics and a one-line MVP summary.
+4. The app opens a **dedicated results screen** (separate from the landing page, with a
+   **← Back** button) showing the **Requirements / Judging / MVP / Submission** panel,
+   deadline + prize + confidence metrics, and a one-line MVP summary. The browser Back
+   button returns to the landing page too.
 5. **Copy brief** puts a readable plain-text version on your clipboard.
 
 If no API key is configured, the app runs in a clearly-labeled **Demo mode** that returns
@@ -77,8 +79,10 @@ Copy `.env.example` to `.env.local` (gitignored) and fill in your key:
 
 ```bash
 GEMINI_API_KEY=your_key_here        # from https://aistudio.google.com/apikey
-GEMINI_MODEL=gemini-2.5-flash       # optional; any supported Flash model
+GEMINI_MODEL=gemini-flash-latest    # optional; alias tracking the current Flash model
 MAX_PAGE_CHARS=16000                # optional; caps text sent to the model
+# FETCH_TIMEOUT_MS=12000            # optional; raise only on a slow network
+# GEMINI_TIMEOUT_MS=60000           # optional; raise only on a slow network
 ```
 
 Restart the server after editing `.env.local`.

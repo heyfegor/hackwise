@@ -35,14 +35,14 @@ PRD ref: `prd.md > The Core Journey`.
 - **Node.js ≥ 18 built-in `http` server** (`server.mjs`) — serves the static UI and the `/api/analyze` endpoint, keeping the Gemini key server-side. Zero framework. Docs: https://nodejs.org/api/http.html
 - **Static HTML + CSS + vanilla JS** (`public/index.html`, `public/app.js`) — the full landing design ported 1:1 with inline CSS tokens and a small vanilla-JS state machine (mirrors the original design file's own structure). No build step.
 - **Geist + Geist Mono** via Google Fonts `<link>` (as in the original design), with `system-ui` fallback.
-- **Gemini via built-in `fetch`** to the REST API, with an automatic dynamic `import('@google/genai')` that uses the **official SDK if it is installed** (`npm install @google/genai`) — so the official-SDK requirement is honored the moment the network allows, with no code change. Model from env (`GEMINI_MODEL`, default `gemini-2.5-flash`), `responseMimeType: application/json`. Docs: https://ai.google.dev/gemini-api/docs · SDK: https://googleapis.github.io/js-genai/ · models: https://ai.google.dev/gemini-api/docs/models
+- **Gemini via built-in `fetch`** to the REST API, with an automatic dynamic `import('@google/genai')` that uses the **official SDK if it is installed** (`npm install @google/genai`) — so the official-SDK requirement is honored the moment the network allows, with no code change. Model from env (`GEMINI_MODEL`, default `gemini-flash-latest`), `responseMimeType: application/json`. Docs: https://ai.google.dev/gemini-api/docs · SDK: https://googleapis.github.io/js-genai/ · models: https://ai.google.dev/gemini-api/docs/models
 - **HTML → text via regex** (`lib/extract.mjs`) instead of cheerio — script/style/tag-stripped, size-capped text. Tradeoff: JS-rendered pages extract less text (flagged as a low-confidence failure mode).
 - **Hand-rolled schema validation** (`lib/schema.mjs > validateBrief`) instead of zod — validates the model's JSON shape and rejects malformed output before it is displayed.
 - Rationale/tradeoff accepted: zero dependencies means nothing to install (immune to the network blocker) and a smaller attack surface; the cost is writing extraction/validation by hand, which is modest for this POC and fully covers its needs.
 
 ## Where It Runs and How Someone Tries It
 - Runtime: Node.js 18+ (dev machine has Node 24). Browser for the UI.
-- Environment: `GEMINI_API_KEY` (required for live analysis), `GEMINI_MODEL` (optional, default `gemini-2.5-flash`), `MAX_PAGE_CHARS` (optional, default 16000). Keys live in `.env.local` (gitignored); `.env.example` documents them.
+- Environment: `GEMINI_API_KEY` (required for live analysis), `GEMINI_MODEL` (optional, default `gemini-flash-latest`), `MAX_PAGE_CHARS` (optional, default 16000). Keys live in `.env.local` (gitignored); `.env.example` documents them.
 - Start: `node server.mjs` (or `npm start`), open http://localhost:3000. No `npm install` is required (zero dependencies). `PORT` env overrides the port.
 - Demo recording: the local app is sufficient for the required demo video. Deployment is optional (Vercel is the natural target: set the same env vars in the project settings) and never replaces the video or the public repo.
 
@@ -141,7 +141,7 @@ Component/behavior mapping (supersedes the Next.js `Components` headings below):
 ## External Services and Dependencies
 - **Google Gemini API** via `@google/genai`.
   - Call: `ai.models.generateContent({ model, contents, config: { responseMimeType: "application/json", responseSchema, temperature, maxOutputTokens, systemInstruction } })`; read `response.text`.
-  - Key: `GEMINI_API_KEY` (server env). Model: `GEMINI_MODEL` default `gemini-2.5-flash`.
+  - Key: `GEMINI_API_KEY` (server env). Model: `GEMINI_MODEL` default `gemini-flash-latest`.
   - Docs: https://ai.google.dev/gemini-api/docs · rate limits: https://ai.google.dev/gemini-api/docs/rate-limits (free tier is limited; handled as a failure mode). Cost: free tier available; capped output tokens keep cost/latency bounded.
 - **The user's pasted URL** — an arbitrary third-party page fetched server-side. Treated as untrusted: size-capped, text-only, and never interpreted as model instructions.
 
@@ -159,7 +159,7 @@ Component/behavior mapping (supersedes the Next.js `Components` headings below):
 
 ## Decisions and Open Issues
 - **Stack = Next.js + server route** (learner-selected) — chosen to keep the Gemini key server-side with the least moving parts; tradeoff: more than a static page, accepted.
-- **Model = Gemini Flash via env** (learner-selected family; implementation default `gemini-2.5-flash`) — fast + cheap + supports JSON response schema.
+- **Model = Gemini Flash via env** (learner-selected family; implementation default `gemini-flash-latest`) — fast + cheap + supports JSON response schema.
 - **Facts vs. inference split** (learner requirement) — enforced in the prompt, the schema, and the UI.
 - **One genuine uncertainty to verify early in the build:** will `@google/genai`'s `responseSchema` reliably coerce Gemini Flash into our exact JSON shape? Plan to check first thing in `5-build` by running one real analysis (when a key is available) and confirming Zod parses it; if `responseSchema` is unreliable, fall back to strict prompt + Zod + one retry (already the error path). Evidence will live in the live-test output recorded during build.
 - Open: live end-to-end depends on a valid `GEMINI_API_KEY`; without one, only demo mode + validation/error paths are verifiable. No other consequential gaps.
