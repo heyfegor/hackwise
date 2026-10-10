@@ -5,7 +5,11 @@
 (function () {
   "use strict";
 
-  var LIME = "#B8F23A", MUTED = "#9a9a94";
+  var LIME = "#B8F23A", MUTED = "#9a9a94", OLIVE = "#5a7a2e";
+  // Accent/muted colors per surface: dark landing Preview uses lime; the light
+  // results screen uses olive (lime is too low-contrast on white).
+  var THEME_DARK = { acc: LIME, mut: "#9a9a94" };
+  var THEME_LIGHT = { acc: OLIVE, mut: "#8a8a84" };
 
   // Live analysis state (results screen).
   var res = { phase: "idle", tab: "requirements", brief: null, error: null, doneCount: 0, url: "" };
@@ -67,23 +71,25 @@
   }
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 
-  function rowsFor(tab, b) {
+  function rowsFor(tab, b, t) {
+    t = t || THEME_DARK;
+    var ACC = t.acc, MUT = t.mut;
     if (tab === "requirements") {
-      if (!b.requirements.length) return [{ tag: "—", color: MUTED, text: "No explicit requirements found on the page." }];
-      return b.requirements.map(function (r) { return { tag: r.weight, color: r.weight === "HIGH" ? LIME : MUTED, text: r.text }; });
+      if (!b.requirements.length) return [{ tag: "—", color: MUT, text: "No explicit requirements found on the page." }];
+      return b.requirements.map(function (r) { return { tag: r.weight, color: r.weight === "HIGH" ? ACC : MUT, text: r.text }; });
     }
     if (tab === "judging") {
-      if (!b.judging.length) return [{ tag: "—", color: MUTED, text: "No judging criteria found on the page." }];
+      if (!b.judging.length) return [{ tag: "—", color: MUT, text: "No judging criteria found on the page." }];
       var nums = b.judging.map(function (j) { return parseFloat(String(j.weight).replace(/[^0-9.]/g, "")) || 0; });
       var max = Math.max.apply(null, nums);
-      return b.judging.map(function (j, i) { return { tag: j.weight || "—", color: nums[i] === max && max > 0 ? LIME : MUTED, text: j.text }; });
+      return b.judging.map(function (j, i) { return { tag: j.weight || "—", color: nums[i] === max && max > 0 ? ACC : MUT, text: j.text }; });
     }
     if (tab === "mvp") {
-      if (!b.mvp.length) return [{ tag: "—", color: MUTED, text: "No MVP steps generated." }];
-      return b.mvp.map(function (m) { return { tag: m.step, color: LIME, text: m.text }; });
+      if (!b.mvp.length) return [{ tag: "—", color: MUT, text: "No MVP steps generated." }];
+      return b.mvp.map(function (m) { return { tag: m.step, color: ACC, text: m.text }; });
     }
-    if (!b.submission.length) return [{ tag: "—", color: MUTED, text: "No submission requirements found on the page." }];
-    return b.submission.map(function (s) { return { tag: s.tag, color: LIME, text: s.text }; });
+    if (!b.submission.length) return [{ tag: "—", color: MUT, text: "No submission requirements found on the page." }];
+    return b.submission.map(function (s) { return { tag: s.tag, color: ACC, text: s.text }; });
   }
 
   function tabsHtml(activeId) {
@@ -91,8 +97,8 @@
     TABS.forEach(function (t) { h += '<button class="tab' + (t.id === activeId ? " active" : "") + '" data-tab="' + t.id + '">' + t.label + "</button>"; });
     return h + "</div>";
   }
-  function rowsHtml(tab, b) {
-    return rowsFor(tab, b).map(function (r) {
+  function rowsHtml(tab, b, theme) {
+    return rowsFor(tab, b, theme).map(function (r) {
       return '<div class="brief-row"><span class="tag" style="color:' + r.color + ';">' + esc(r.tag) + '</span><span class="txt">' + esc(r.text) + "</span></div>";
     }).join("") + '<div class="row-cap"></div>';
   }
@@ -148,7 +154,7 @@
       '<div><div class="mono-label">PRIZE</div><div class="metric-val">' + esc(b.meta.prize) + "</div></div>";
     $("hw-mvpbox").innerHTML = "";
     var el = $("hw-panel-right");
-    el.innerHTML = tabsHtml(sampleTab) + rowsHtml(sampleTab, b);
+    el.innerHTML = tabsHtml(sampleTab) + rowsHtml(sampleTab, b, THEME_DARK);
     Array.prototype.forEach.call(el.querySelectorAll("[data-tab]"), function (btn) {
       btn.addEventListener("click", function () { sampleTab = btn.getAttribute("data-tab"); renderSample(); });
     });
@@ -168,9 +174,9 @@
       var h = '<div class="mono-label" style="margin-bottom:20px;">ANALYZING…</div>';
       for (var i = 0; i < STAGES.length; i++) {
         var done = i < res.doneCount, active = i === res.doneCount;
-        var markStyle = done ? "background:" + LIME + ";" : active ? "border:2px solid " + LIME + ";border-top-color:transparent;animation:hw-spin .7s linear infinite;" : "border:1.5px solid rgba(255,255,255,.16);";
+        var markStyle = done ? "background:" + LIME + ";" : active ? "border:2px solid " + LIME + ";border-top-color:transparent;animation:hw-spin .7s linear infinite;" : "border:1.5px solid rgba(20,20,20,.18);";
         h += '<div class="stage" style="opacity:' + (done || active ? 1 : 0.42) + ';"><span class="mark" style="' + markStyle + '">' + (done ? "✓" : "") + "</span>" +
-             '<span class="lbl" style="color:' + (done || active ? "#FBFAF7" : "#8a8a84") + ';">' + esc(done ? STAGE_DONE[i] : active ? STAGES[i] + "…" : STAGES[i]) + "</span></div>";
+             '<span class="lbl" style="color:' + (done || active ? "#141414" : "#8a8a84") + ';">' + esc(done ? STAGE_DONE[i] : active ? STAGES[i] + "…" : STAGES[i]) + "</span></div>";
       }
       $("res-panel-right").innerHTML = h;
       return;
@@ -181,10 +187,15 @@
       $("res-lede").textContent = "Hackwise couldn't finish this analysis. You can head back and try another URL.";
       $("res-metrics").innerHTML = "";
       $("res-mvpbox").innerHTML = "";
+      var showPaste = res.error.code === "FETCH_FAILED";
       $("res-panel-right").innerHTML =
         '<div class="err-card"><div class="code">ANALYSIS FAILED · ' + esc(res.error.code) + "</div><p>" + esc(res.error.message) + "</p>" +
-        '<button class="pill-lime" id="res-retry">Try again</button></div>';
-      $("res-retry").addEventListener("click", function () { runAnalysis(res.url); });
+        '<button class="pill-lime" id="res-retry">Try again</button>' +
+        (showPaste ? ' <button class="copy-btn" id="res-paste" style="margin-left:10px;">Paste the text instead</button>' : "") +
+        "</div>";
+      $("res-retry").addEventListener("click", function () { runAnalysis(res.lastPayload || { url: res.url }); });
+      var rp = $("res-paste");
+      if (rp) rp.addEventListener("click", function () { goBackToLanding(); openPaste(); });
       return;
     }
 
@@ -206,7 +217,7 @@
 
     var toolbar = '<div class="toolbar">' + (isDemo ? '<span class="badge-demo">DEMO MODE</span>' : "") + '<button class="copy-btn" id="res-copy">COPY BRIEF</button></div>';
     var el = $("res-panel-right");
-    el.innerHTML = toolbar + tabsHtml(res.tab) + rowsHtml(res.tab, b);
+    el.innerHTML = toolbar + tabsHtml(res.tab) + rowsHtml(res.tab, b, THEME_LIGHT);
     Array.prototype.forEach.call(el.querySelectorAll("[data-tab]"), function (btn) {
       btn.addEventListener("click", function () { res.tab = btn.getAttribute("data-tab"); renderResults(); });
     });
@@ -246,17 +257,37 @@
     if (!isPlausibleUrl(url)) { setInlineError("Enter a valid hackathon URL (https://…)"); return; }
     setInlineError("");
     goResults();
-    runAnalysis(url);
+    runAnalysis({ url: url });
   }
 
-  function runAnalysis(url) {
+  function submitPasted() {
+    setMenu(false);
+    var text = ($("hw-paste").value || "").trim();
+    var url = ($("hw-url").value || "").trim();
+    if (text.length < 40) { setInlineError("Paste a bit more of the page text (a sentence or two)."); $("hw-paste").focus(); return; }
+    setInlineError("");
+    goResults();
+    runAnalysis({ text: text, url: isPlausibleUrl(url) ? url : undefined });
+  }
+
+  function openPaste() {
+    var box = $("hw-paste-box");
+    box.hidden = false;
+    $("hw-paste-toggle").textContent = "Hide paste box";
+    try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+    setTimeout(function () { $("hw-paste").focus(); }, 300);
+  }
+
+  function runAnalysis(payload) {
     clearTimers();
-    res.url = url; res.phase = "analyzing"; res.doneCount = 0; res.error = null; res.brief = null; res.tab = "requirements";
+    res.lastPayload = payload;
+    res.url = payload.url && isPlausibleUrl(payload.url) ? payload.url : payload.text ? "Pasted text" : payload.url || "";
+    res.phase = "analyzing"; res.doneCount = 0; res.error = null; res.brief = null; res.tab = "requirements";
     renderResults();
     for (var i = 1; i <= STAGES.length; i++) {
       (function (n) { timers.push(setTimeout(function () { if (res.phase === "analyzing") { res.doneCount = n; renderResults(); } }, 480 * n)); })(i);
     }
-    fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url }) })
+    fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
       .then(function (r) {
         clearTimers();
@@ -289,6 +320,13 @@
     ta.addEventListener("blur", function () { composer.classList.remove("focused"); });
     ta.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } });
     $("hw-send").addEventListener("click", submit);
+
+    $("hw-paste-toggle").addEventListener("click", function () {
+      var box = $("hw-paste-box");
+      if (box.hidden) openPaste();
+      else { box.hidden = true; $("hw-paste-toggle").textContent = "Page won't load? Paste the text instead"; }
+    });
+    $("hw-paste-go").addEventListener("click", submitPasted);
 
     $("hw-hamburger").addEventListener("click", function () { setMenu(!$("hw-mobile-menu").classList.contains("open")); });
     Array.prototype.forEach.call(document.querySelectorAll("[data-analyze]"), function (btn) { btn.addEventListener("click", focusInput); });

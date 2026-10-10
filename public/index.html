@@ -64,6 +64,12 @@
   .send:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 20px rgba(184,242,58,.55); }
   .send:disabled { opacity:.55; cursor:not-allowed; }
   .inline-err { min-height:22px; margin-top:10px; font-size:14px; color:#b4463a; }
+  .paste-toggle { margin-top:6px; background:none; border:none; cursor:pointer; color:var(--body); font-size:13.5px; text-decoration:underline; text-underline-offset:3px; }
+  .paste-toggle:hover { color:var(--ink); }
+  .paste-box { width:100%; max-width:620px; margin:14px auto 0; text-align:left; }
+  .paste-box textarea { width:100%; border:1.5px solid rgba(20,20,20,.14); border-radius:16px; padding:12px 14px; font-size:14.5px; line-height:1.5; color:var(--ink); background:#fff; resize:vertical; min-height:120px; outline:none; font-family:inherit; }
+  .paste-box textarea:focus { border-color:var(--lime); box-shadow:0 0 0 4px rgba(184,242,58,.2); }
+  .paste-box .paste-hint { font-size:12.5px; color:var(--muted); margin:8px 2px 0; }
 
   .platforms { margin-top:clamp(30px,6vw,54px); display:flex; flex-direction:column; align-items:center; }
   .platforms .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--faint); margin-bottom:16px; }
@@ -166,16 +172,30 @@
   .foot-col .links a { font-size:14.5px; color:var(--body); }
   .foot-bottom { border-top:1px solid rgba(20,20,20,.1); padding-top:22px; font-family:var(--mono); font-size:11.5px; color:var(--faint); }
 
-  /* results screen (separate from the landing; same design system) */
-  .results { background:var(--ink); color:var(--canvas); min-height:100vh; }
-  .res-nav { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:16px; padding:16px clamp(20px,4vw,40px); background:rgba(20,20,20,.92); backdrop-filter:saturate(1.1) blur(8px); -webkit-backdrop-filter:saturate(1.1) blur(8px); border-bottom:1px solid rgba(255,255,255,.1); }
-  .res-back { cursor:pointer; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.07); color:var(--canvas); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500; transition:background .15s ease, transform .15s ease; }
-  .res-back:hover { background:rgba(255,255,255,.14); transform:translateX(-2px); }
+  /* results screen (separate from the landing; LIGHT, matching the landing page) */
+  .results { background:var(--canvas); color:var(--ink); min-height:100vh; }
+  .res-nav { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:16px; padding:16px clamp(20px,4vw,40px); background:rgba(251,250,247,.9); backdrop-filter:saturate(1.1) blur(8px); -webkit-backdrop-filter:saturate(1.1) blur(8px); border-bottom:1px solid rgba(20,20,20,.08); }
+  .res-back { cursor:pointer; display:inline-flex; align-items:center; gap:8px; background:#fff; color:var(--ink); border:1px solid rgba(20,20,20,.14); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:500; transition:background .15s ease, transform .15s ease; }
+  .res-back:hover { background:var(--band); transform:translateX(-2px); }
   .res-brand { display:flex; align-items:center; gap:9px; }
-  .res-brand span { font-weight:600; font-size:17px; letter-spacing:-.02em; color:var(--canvas); }
-  .res-url { margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--muted2); max-width:42%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .res-brand span { font-weight:600; font-size:17px; letter-spacing:-.02em; color:var(--ink); }
+  .res-url { margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--muted); max-width:42%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .res-body { padding-top:clamp(36px,6vw,64px); padding-bottom:clamp(48px,8vw,96px); }
   .res-body h2 { font-size:clamp(28px,3.5vw,44px); line-height:1.05; letter-spacing:-.03em; font-weight:600; margin:0 0 14px; }
+  /* light overrides for the panel components reused from the dark Preview */
+  .results .lede { color:var(--body); font-size:clamp(15px,1.2vw,18px); margin:0 0 30px; max-width:26em; }
+  .results .brief-row, .results .row-cap, .results .mvp-box, .results .stage { border-top-color:rgba(20,20,20,.1); }
+  .results .tab { background:rgba(20,20,20,.05); color:var(--body); }
+  .results .tab.active { background:var(--lime); color:var(--ink); }
+  .results .mono-label { color:var(--muted); }
+  .results .metric-val { color:var(--ink); }
+  .results .metric-val.lime { color:var(--olive); }
+  .results .mvp-box p { color:var(--ink); }
+  .results .mvp-box p.note { color:var(--body); }
+  .results .copy-btn { border-color:rgba(20,20,20,.18); background:#fff; color:var(--ink); }
+  .results .badge-demo { background:rgba(184,242,58,.2); color:var(--olive); border-color:var(--olive); }
+  .results .err-card { border-color:rgba(20,20,20,.14); background:#fff; }
+  .results .err-card p { color:var(--ink); }
 
   @media (max-width:880px) {
     .res-url { display:none !important; }
@@ -238,6 +258,14 @@
       </div>
     </div>
     <div class="inline-err" id="hw-inline-err" role="alert"></div>
+    <button class="paste-toggle" id="hw-paste-toggle" type="button">Page won't load? Paste the text instead</button>
+    <div class="paste-box" id="hw-paste-box" hidden>
+      <textarea id="hw-paste" rows="6" placeholder="Paste the hackathon page's text here (rules, requirements, judging, deadline)…" aria-label="Hackathon page text"></textarea>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn-dark" id="hw-paste-go" type="button">Analyze pasted text</button>
+        <span class="paste-hint">Useful for sites that block automated reading (e.g. Devpost).</span>
+      </div>
+    </div>
 
     <div class="platforms">
       <div class="eyebrow">WORKS WITH THE PLATFORMS YOU ALREADY USE</div>
@@ -391,7 +419,7 @@
     <header class="res-nav">
       <button class="res-back" id="res-back" type="button"><span aria-hidden="true">←</span> Back</button>
       <a href="/" class="res-brand" data-back aria-label="Back to Hackwise home">
-        <svg width="24" height="20" viewBox="0 0 32 28" fill="none" aria-hidden="true"><path d="M2 5 L9 23 L16 10 L21 20" stroke="#FBFAF7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 20 L30 4" stroke="#B8F23A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="24" height="20" viewBox="0 0 32 28" fill="none" aria-hidden="true"><path d="M2 5 L9 23 L16 10 L21 20" stroke="#141414" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 20 L30 4" stroke="#B8F23A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>hackwise</span>
       </a>
       <span class="res-url" id="res-url"></span>

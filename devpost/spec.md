@@ -144,6 +144,8 @@ Component/behavior mapping (supersedes the Next.js `Components` headings below):
   - Key: `GEMINI_API_KEY` (server env). Model: `GEMINI_MODEL` default `gemini-flash-latest`.
   - Docs: https://ai.google.dev/gemini-api/docs · rate limits: https://ai.google.dev/gemini-api/docs/rate-limits (free tier is limited; handled as a failure mode). Cost: free tier available; capped output tokens keep cost/latency bounded.
 - **The user's pasted URL** — an arbitrary third-party page fetched server-side. Treated as untrusted: size-capped, text-only, and never interpreted as model instructions.
+- **Reader proxy (`r.jina.ai`, configurable via `READER_PROXY`)** — used only as a fallback when a direct fetch is blocked (e.g. Devpost/Cloudflare 403) or returns too little text. The (public) hackathon URL is sent to the reader, which returns rendered page text. Retried a few times (anonymous tier is intermittently rate-limited). Disable by setting `READER_PROXY=""`.
+- **Pasted-text path** — the UI and `/api/analyze` also accept `{ text }` directly (no fetch), so any site that can't be read is still analyzable by pasting its text. This is the guaranteed path for the demo.
 
 ## Important Failure Modes
 - **No `GEMINI_API_KEY`** → server returns the labeled demo brief (`mode: "demo"`); UI shows a "Demo mode" badge.

@@ -10,14 +10,14 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
 import { isPlausibleUrl } from "./lib/schema.mjs";
-import { fetchPageText, FetchError } from "./lib/extract.mjs";
+import { fetchPageText, wrapPastedText, FetchError } from "./lib/extract.mjs";
 import { analyzeWithGemini, ModelError } from "./lib/gemini.mjs";
 import { demoBrief } from "./lib/demoBrief.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "public");
 const PORT = Number(process.env.PORT) || 3000;
-const MAX_BODY = 8 * 1024; // request body cap
+const MAX_BODY = 256 * 1024; // request body cap (allows pasted page text)
 
 // ---- Minimal .env loader (no dotenv dependency) ----
 loadEnvFile(join(__dirname, ".env.local"));
@@ -103,27 +103,32 @@ async function handleAnalyze(req, res) {
   if (body === null) {
     return sendJson(res, 413, { ok: false, error: { code: "SERVER_ERROR", message: "Request too large." } });
   }
-  let url;
+  let url, text;
   try {
-    url = JSON.parse(body).url;
+    const parsed = JSON.parse(body);
+    url = parsed.url;
+    text = typeof parsed.text === "string" ? parsed.text.trim() : "";
   } catch {
     return sendJson(res, 400, { ok: false, error: { code: "INVALID_URL", message: "Malformed request body." } });
   }
-  if (!isPlausibleUrl(url)) {
-    return sendJson(res, 400, { ok: false, error: { code: "INVALID_URL", message: "Enter a valid hackathon URL (https://…)." } });
+
+  const hasText = text && text.length >= 40;
+  const hasUrl = isPlausibleUrl(url);
+  if (!hasText && !hasUrl) {
+    return sendJson(res, 400, { ok: false, error: { code: "INVALID_URL", message: "Enter a valid hackathon URL (https://…), or paste the page text." } });
   }
-  url = url.trim();
+  const sourceUrl = hasUrl ? String(url).trim() : "Pasted text";
 
   // No key -> clearly-labeled demo mode.
   if (!process.env.GEMINI_API_KEY) {
-    const brief = { ...demoBrief(url), _meta: { mode: "demo", model: null } };
+    const brief = { ...demoBrief(sourceUrl), _meta: { mode: "demo", model: null } };
     return sendJson(res, 200, { ok: true, mode: "demo", brief });
   }
 
-  // Live analysis: fetch -> extract -> model -> validate.
+  // Live analysis: (fetch | pasted text) -> extract -> model -> validate.
   try {
-    const page = await fetchPageText(url);
-    const { brief, model } = await analyzeWithGemini(page, url);
+    const page = hasText ? wrapPastedText(text, hasUrl ? String(url).trim() : "") : await fetchPageText(sourceUrl);
+    const { brief, model } = await analyzeWithGemini(page, sourceUrl);
     return sendJson(res, 200, { ok: true, mode: "live", brief: { ...brief, _meta: { mode: "live", model } } });
   } catch (err) {
     if (err instanceof FetchError) {

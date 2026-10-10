@@ -18,7 +18,10 @@ learning hackathon, following its Skill Pack plan-first workflow (see `devpost/`
 1. Paste a hackathon URL into the composer and press **Enter** (or the send button).
 2. The browser validates the URL, then POSTs it to a **server-side** endpoint.
 3. The server fetches the page, extracts readable text, sends it to **Google Gemini**
-   with a strict prompt, and **validates the returned JSON** against a schema.
+   with a strict prompt, and **validates the returned JSON** against a schema. If a site
+   blocks direct fetches (many hackathon sites like **Devpost** do), the server
+   automatically retries through a **reader proxy** (`r.jina.ai`). If that also fails,
+   you can **paste the page text** directly ("Page won't load? Paste the text instead").
 4. The app opens a **dedicated results screen** (separate from the landing page, with a
    **← Back** button) showing the **Requirements / Judging / MVP / Submission** panel,
    deadline + prize + confidence metrics, and a one-line MVP summary. The browser Back
