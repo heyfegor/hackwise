@@ -13,6 +13,7 @@
 
   // Live analysis state (results screen).
   var res = { phase: "idle", tab: "requirements", brief: null, error: null, doneCount: 0, url: "" };
+  var inFlight = false; // guards against duplicate submissions while a request is running
   var sampleTab = "requirements";
   var timers = [];
 
@@ -178,6 +179,7 @@
         h += '<div class="stage" style="opacity:' + (done || active ? 1 : 0.42) + ';"><span class="mark" style="' + markStyle + '">' + (done ? "✓" : "") + "</span>" +
              '<span class="lbl" style="color:' + (done || active ? "#141414" : "#8a8a84") + ';">' + esc(done ? STAGE_DONE[i] : active ? STAGES[i] + "…" : STAGES[i]) + "</span></div>";
       }
+      if (res.hint) h += '<p class="note" style="margin-top:22px;color:#8a8a84;">' + esc(res.hint) + "</p>";
       $("res-panel-right").innerHTML = h;
       return;
     }
@@ -187,7 +189,12 @@
       $("res-lede").textContent = "Hackwise couldn't finish this analysis. You can head back and try another URL.";
       $("res-metrics").innerHTML = "";
       $("res-mvpbox").innerHTML = "";
-      var showPaste = res.error.code === "FETCH_FAILED";
+      // Offer the manual-paste fallback whenever a URL submission failed for any
+      // reason the user can route around by pasting the page text (blocked page,
+      // timeout, upstream/model hiccup) — not only on an explicit fetch failure.
+      var fromUrl = !!(res.lastPayload && res.lastPayload.url && !res.lastPayload.text);
+      var showPaste = res.error.code === "FETCH_FAILED" ||
+        (fromUrl && (res.error.code === "TIMEOUT" || res.error.code === "MODEL_ERROR" || res.error.code === "NETWORK" || res.error.code === "SERVER_ERROR"));
       $("res-panel-right").innerHTML =
         '<div class="err-card"><div class="code">ANALYSIS FAILED · ' + esc(res.error.code) + "</div><p>" + esc(res.error.message) + "</p>" +
         '<button class="pill-lime" id="res-retry">Try again</button>' +
@@ -278,26 +285,51 @@
     setTimeout(function () { $("hw-paste").focus(); }, 300);
   }
 
+  // Analysis can legitimately take a while (a blocked page falls back to a slower
+  // reader; the model walks a fallback chain). Give the client its own ceiling so a
+  // genuinely stuck request fails cleanly with an actionable message instead of
+  // spinning forever. Kept above the server's own budget so the server's own
+  // (more specific) error wins in the normal case.
+  var CLIENT_TIMEOUT_MS = 95000;
+
   function runAnalysis(payload) {
+    if (inFlight) return; // ignore repeat clicks / Enter presses while a request is in progress
+    inFlight = true;
     clearTimers();
     res.lastPayload = payload;
     res.url = payload.url && isPlausibleUrl(payload.url) ? payload.url : payload.text ? "Pasted text" : payload.url || "";
-    res.phase = "analyzing"; res.doneCount = 0; res.error = null; res.brief = null; res.tab = "requirements";
+    res.phase = "analyzing"; res.doneCount = 0; res.error = null; res.brief = null; res.tab = "requirements"; res.hint = "";
     renderResults();
-    for (var i = 1; i <= STAGES.length; i++) {
-      (function (n) { timers.push(setTimeout(function () { if (res.phase === "analyzing") { res.doneCount = n; renderResults(); } }, 480 * n)); })(i);
+    // Reveal the first stages over a few seconds, but STOP one short of the end so
+    // the final stage keeps spinning until the real response lands — never show all
+    // stages "done" while results are still pending (that reads as a silent hang).
+    for (var i = 1; i < STAGES.length; i++) {
+      (function (n) { timers.push(setTimeout(function () { if (res.phase === "analyzing") { res.doneCount = n; renderResults(); } }, 1100 * n)); })(i);
     }
-    fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    // Honest reassurance if it runs long, so a slow-but-working request doesn't look stuck.
+    timers.push(setTimeout(function () { if (res.phase === "analyzing") { res.hint = "Still working — some hackathon sites are slow to read."; renderResults(); } }, 9000));
+    timers.push(setTimeout(function () { if (res.phase === "analyzing") { res.hint = "Almost there — this page is taking longer than usual."; renderResults(); } }, 28000));
+
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timedOut = false;
+    var killer = setTimeout(function () { timedOut = true; if (controller) controller.abort(); }, CLIENT_TIMEOUT_MS);
+    timers.push(killer);
+
+    fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: controller ? controller.signal : undefined })
       .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
       .then(function (r) {
         clearTimers();
+        inFlight = false;
         if (r.data && r.data.ok) { res.brief = r.data.brief; res.phase = "brief"; res.tab = "requirements"; }
         else { res.error = (r.data && r.data.error) || { code: "SERVER_ERROR", message: "Something went wrong." }; res.phase = "error"; }
         renderResults();
       })
       .catch(function () {
         clearTimers();
-        res.error = { code: "NETWORK", message: "Couldn't reach the server. Check your connection and try again." };
+        inFlight = false;
+        res.error = timedOut
+          ? { code: "TIMEOUT", message: "This took too long and was stopped. The page may be slow or blocking automated reads — try again, or paste the page text instead." }
+          : { code: "NETWORK", message: "Couldn't reach the server. Check your connection and try again." };
         res.phase = "error"; renderResults();
       });
   }
