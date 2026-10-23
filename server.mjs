@@ -162,7 +162,7 @@ function sendJson(res, status, obj) {
   res.end(payload);
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   const mode = process.env.GEMINI_API_KEY ? "LIVE (GEMINI_API_KEY detected)" : "DEMO (no GEMINI_API_KEY — labeled sample briefs)";
   console.log(`Hackwise running at http://localhost:${PORT}  —  analysis mode: ${mode}`);
 });
